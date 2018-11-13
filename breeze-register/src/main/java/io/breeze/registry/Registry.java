@@ -2,7 +2,10 @@ package io.breeze.registry;
 
 
 import io.breeze.model.Message;
+import io.breeze.model.MessageHeader;
 import io.breeze.model.ProtocolState;
+import io.breeze.serialization.FSTSerializer;
+import io.breeze.serialization.SerializerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -15,7 +18,9 @@ import java.util.List;
  */
 public class Registry {
 
-    private short magic = (short) 0xbabe;
+    private static final short MAGIC = (short) 0xbabe;
+
+    FSTSerializer fstSerializer = SerializerFactory.getFSTSerializer();
 
     /**
      * Message编码器
@@ -24,12 +29,13 @@ public class Registry {
 
         @Override
         protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception {
-            out.writeShort(magic)
+            out.writeShort(MAGIC)
             .writeByte(msg.getType())
             .writeByte(msg.getStatus())
             .writeLong(msg.getReqId())
             .writeInt(msg.getLength());
-//            out.writeBytes()
+            byte[] bytes = fstSerializer.writeObject(msg.getBody());
+            out.writeBytes(bytes);
         }
 
     }
@@ -39,9 +45,40 @@ public class Registry {
      */
     public class MessageDecoder extends ReplayingDecoder<ProtocolState> {
 
+        private MessageHeader header = new MessageHeader();
+
         @Override
         protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
 
+            switch (state()){
+                case MAGIC:
+                    checkMagic(in.readShort());
+                    checkpoint(ProtocolState.MAGIC);
+                case TYPE:
+                    header.setType(in.readByte());
+                    checkpoint(ProtocolState.TYPE);
+                case STATUS:
+                    header.setStatus(in.readByte());
+                    checkpoint(ProtocolState.STATUS);
+                case ID:
+                    header.setReqId(in.readLong());
+                    checkpoint(ProtocolState.ID);
+                case BODY_SIZE:
+                    header.setLength(in.readInt());
+                    checkpoint(ProtocolState.BODY_SIZE);
+                case BODY:
+                    byte[] bytes = new byte[header.getLength()];
+                    in.readBytes(bytes);
+                    Object object = fstSerializer.readObject(bytes, Object.class);
+                    out.add(new Message(header.getType(), header.getStatus(), header.getLength(), header.getReqId(), object));
+            }
+            checkpoint(ProtocolState.MAGIC);
+        }
+
+        private void checkMagic(short magic) throws Exception{
+            if (MAGIC != magic) {
+                throw new Exception("error magic!");
+            }
         }
 
     }

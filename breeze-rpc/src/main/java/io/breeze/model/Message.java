@@ -11,6 +11,14 @@ public class Message {
     private long reqId;
     private Object body;
 
+    public Message(byte type, byte status, int length, long reqId, Object body) {
+        this.type = type;
+        this.status = status;
+        this.length = length;
+        this.reqId = reqId;
+        this.body = body;
+    }
+
     public byte getType() {
         return type;
     }
