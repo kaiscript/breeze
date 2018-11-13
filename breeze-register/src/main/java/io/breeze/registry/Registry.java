@@ -15,6 +15,8 @@ import java.util.List;
  */
 public class Registry {
 
+    private short magic = (short) 0xbabe;
+
     /**
      * Message编码器
      */
@@ -22,7 +24,12 @@ public class Registry {
 
         @Override
         protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception {
-
+            out.writeShort(magic)
+            .writeByte(msg.getType())
+            .writeByte(msg.getStatus())
+            .writeLong(msg.getReqId())
+            .writeInt(msg.getLength());
+//            out.writeBytes()
         }
 
     }
