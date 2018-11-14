@@ -6,7 +6,9 @@ import io.breeze.model.MessageHeader;
 import io.breeze.model.ProtocolState;
 import io.breeze.serialization.FSTSerializer;
 import io.breeze.serialization.SerializerFactory;
+import io.breeze.transport.connector.Connector;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.ReplayingDecoder;
@@ -16,11 +18,14 @@ import java.util.List;
 /**
  * Created by chenkai on 2018/11/13.
  */
-public class Registry {
+public class Registry extends Connector {
 
     private static final short MAGIC = (short) 0xbabe;
 
     FSTSerializer fstSerializer = SerializerFactory.getFSTSerializer();
+
+    /** connect的时候为channel赋值 */
+    private Channel channel;
 
     /**
      * Message编码器
