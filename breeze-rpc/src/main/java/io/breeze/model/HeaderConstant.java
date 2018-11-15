@@ -3,7 +3,7 @@ package io.breeze.model;
 /**
  * Created by chenkai on 2018/11/13.
  */
-public class Header {
+public class HeaderConstant {
 
     public static final short MAGIC = (short) 0xbabe;
 

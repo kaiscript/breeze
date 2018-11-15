@@ -1,7 +1,7 @@
 package io.breeze.registry;
 
 
-import io.breeze.model.Header;
+import io.breeze.model.HeaderConstant;
 import io.breeze.model.Message;
 import io.breeze.model.MessageHeader;
 import io.breeze.model.ProtocolState;
@@ -43,7 +43,7 @@ public class Registry extends Connector {
 
         @Override
         protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception {
-            out.writeShort(Header.MAGIC)
+            out.writeShort(HeaderConstant.MAGIC)
                     .writeByte(msg.getType())
                     .writeByte(0)
                     .writeLong(0);
@@ -59,6 +59,10 @@ public class Registry extends Connector {
      */
     public class MessageDecoder extends ReplayingDecoder<ProtocolState> {
 
+        public MessageDecoder() {
+            super(ProtocolState.MAGIC);
+        }
+
         private MessageHeader header = new MessageHeader();
 
         @Override
@@ -67,19 +71,19 @@ public class Registry extends Connector {
             switch (state()){
                 case MAGIC:
                     checkMagic(in.readShort());
-                    checkpoint(ProtocolState.MAGIC);
+                    checkpoint(ProtocolState.TYPE);
                 case TYPE:
                     header.setType(in.readByte());
-                    checkpoint(ProtocolState.TYPE);
+                    checkpoint(ProtocolState.STATUS);
                 case STATUS:
                     header.setStatus(in.readByte());
-                    checkpoint(ProtocolState.STATUS);
+                    checkpoint(ProtocolState.ID);
                 case ID:
                     header.setReqId(in.readLong());
-                    checkpoint(ProtocolState.ID);
+                    checkpoint(ProtocolState.BODY_SIZE);
                 case BODY_SIZE:
                     header.setLength(in.readInt());
-                    checkpoint(ProtocolState.BODY_SIZE);
+                    checkpoint(ProtocolState.BODY);
                 case BODY:
                     byte[] bytes = new byte[header.getLength()];
                     in.readBytes(bytes);
@@ -90,7 +94,7 @@ public class Registry extends Connector {
         }
 
         private void checkMagic(short magic) throws Exception{
-            if (Header.MAGIC != magic) {
+            if (HeaderConstant.MAGIC != magic) {
                 throw new Exception("error magic!");
             }
         }
@@ -125,7 +129,7 @@ public class Registry extends Connector {
         RegisterMeta.ServiceMeta serviceMeta = new RegisterMeta.ServiceMeta();
         serviceMeta.serviceName = "testService";
         registerMeta.setServiceMeta(serviceMeta);
-        Message message = new Message((byte) Header.MAGIC, Header.MAGIC, registerMeta);
+        Message message = new Message((byte) HeaderConstant.MAGIC, HeaderConstant.MAGIC, registerMeta);
         channel.pipeline().writeAndFlush(message);
     }
 

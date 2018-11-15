@@ -1,7 +1,8 @@
 package io.breeze.server;
 
-import io.breeze.model.Header;
+import io.breeze.model.HeaderConstant;
 import io.breeze.model.Message;
+import io.breeze.model.MessageHeader;
 import io.breeze.model.ProtocolState;
 import io.breeze.registry.RegistryService;
 import io.breeze.serialization.FSTSerializer;
@@ -50,7 +51,7 @@ public class DefaultServer extends Acceptor {
 
         @Override
         protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception {
-            out.writeShort(Header.MAGIC)
+            out.writeShort(HeaderConstant.MAGIC)
                     .writeByte(msg.getType())
                     .writeByte(0)
                     .writeLong(0);
@@ -66,11 +67,47 @@ public class DefaultServer extends Acceptor {
      */
     public class MessageDecoder extends ReplayingDecoder<ProtocolState>{
 
+        public MessageHeader header = new MessageHeader();
+
+        public MessageDecoder() {
+            super(ProtocolState.MAGIC);
+        }
+
         @Override
         protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+            switch (state()){
+                case MAGIC:
+                    checkMagic(in.readShort());
+                    checkpoint(ProtocolState.TYPE);
+                case TYPE:
+                    header.setType(in.readByte());
+                    checkpoint(ProtocolState.STATUS);
+                case STATUS:
+                    header.setStatus(in.readByte());
+                    checkpoint(ProtocolState.ID);
+                case ID:
+                    header.setReqId(in.readLong());
+                    checkpoint(ProtocolState.BODY_SIZE);
+                case BODY_SIZE:
+                    header.setLength(in.readInt());
+                    checkpoint(ProtocolState.BODY);
+                case BODY:
+                    byte[] bytes = new byte[header.getLength()];
+                    in.readBytes(bytes);
+                    Object object = fstSerializer.readObject(bytes, Object.class);
+                    out.add(new Message(header.getType(), header.getReqId(), object));
 
+            }
+        }
+
+        private void checkMagic(short magic) throws Exception{
+            if (HeaderConstant.MAGIC != magic) {
+                throw new Exception("error magic!");
+            }
         }
 
     }
+
+
 
 }
