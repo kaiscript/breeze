@@ -5,16 +5,15 @@ package io.breeze.model;
  */
 public class Message {
 
+    /**
+     * 标识Message类型，标识注册订阅
+     */
     private byte type;
-    private byte status;
-    private int length;
     private long reqId;
     private Object body;
 
-    public Message(byte type, byte status, int length, long reqId, Object body) {
+    public Message(byte type, long reqId, Object body) {
         this.type = type;
-        this.status = status;
-        this.length = length;
         this.reqId = reqId;
         this.body = body;
     }
@@ -25,24 +24,6 @@ public class Message {
 
     public Message setType(byte type) {
         this.type = type;
-        return this;
-    }
-
-    public byte getStatus() {
-        return status;
-    }
-
-    public Message setStatus(byte status) {
-        this.status = status;
-        return this;
-    }
-
-    public int getLength() {
-        return length;
-    }
-
-    public Message setLength(int length) {
-        this.length = length;
         return this;
     }
 

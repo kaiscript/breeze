@@ -10,7 +10,15 @@ public class DefaultClient {
 
     private RegistryService registryService;
 
-    void connect(RegisterMeta meta) {
+    public DefaultClient(RegistryService registryService) {
+        this.registryService = registryService;
+    }
+
+    public void watchConnection() {
+
+    }
+
+    void connectToRegisterCenter(RegisterMeta meta) {
 
     }
 

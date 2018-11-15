@@ -1,18 +1,27 @@
 package io.breeze.registry;
 
 
+import io.breeze.model.Header;
 import io.breeze.model.Message;
 import io.breeze.model.MessageHeader;
 import io.breeze.model.ProtocolState;
 import io.breeze.serialization.FSTSerializer;
 import io.breeze.serialization.SerializerFactory;
 import io.breeze.transport.connector.Connector;
+import io.breeze.transport.connector.UnresolvedAddress;
+import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.ReplayingDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.util.List;
 
 /**
@@ -20,7 +29,7 @@ import java.util.List;
  */
 public class Registry extends Connector {
 
-    private static final short MAGIC = (short) 0xbabe;
+    private static final Logger logger = LoggerFactory.getLogger(Registry.class);
 
     FSTSerializer fstSerializer = SerializerFactory.getFSTSerializer();
 
@@ -34,12 +43,12 @@ public class Registry extends Connector {
 
         @Override
         protected void encode(ChannelHandlerContext ctx, Message msg, ByteBuf out) throws Exception {
-            out.writeShort(MAGIC)
-            .writeByte(msg.getType())
-            .writeByte(msg.getStatus())
-            .writeLong(msg.getReqId())
-            .writeInt(msg.getLength());
+            out.writeShort(Header.MAGIC)
+                    .writeByte(msg.getType())
+                    .writeByte(0)
+                    .writeLong(0);
             byte[] bytes = fstSerializer.writeObject(msg.getBody());
+            out.writeInt(bytes.length);
             out.writeBytes(bytes);
         }
 
@@ -75,17 +84,49 @@ public class Registry extends Connector {
                     byte[] bytes = new byte[header.getLength()];
                     in.readBytes(bytes);
                     Object object = fstSerializer.readObject(bytes, Object.class);
-                    out.add(new Message(header.getType(), header.getStatus(), header.getLength(), header.getReqId(), object));
+                    out.add(new Message(header.getType(), header.getReqId(), object));
             }
             checkpoint(ProtocolState.MAGIC);
         }
 
         private void checkMagic(short magic) throws Exception{
-            if (MAGIC != magic) {
+            if (Header.MAGIC != magic) {
                 throw new Exception("error magic!");
             }
         }
 
+    }
+
+    //todo 后续修改为返回 Connection
+    public void connect(UnresolvedAddress address) {
+        Bootstrap bootstrap = bootstrap();
+        InetSocketAddress inetSocketAddress = InetSocketAddress.createUnresolved(address.getHost(), address.getPort());
+        bootstrap.handler(new ChannelInitializer<SocketChannel>() {
+            @Override
+            protected void initChannel(SocketChannel ch) throws Exception {
+                ch.pipeline().addLast(new MessageDecoder());
+                ch.pipeline().addLast(new MessageEncoder());
+            }
+        });
+
+        try {
+            ChannelFuture future = bootstrap.connect(inetSocketAddress).sync();
+            channel = future.channel();
+        } catch (Exception e) {
+            logger.error("bootstrap connect e:", e);
+        }
+
+        testClientSend();
+
+    }
+
+    public void testClientSend() {
+        RegisterMeta registerMeta = new RegisterMeta();
+        RegisterMeta.ServiceMeta serviceMeta = new RegisterMeta.ServiceMeta();
+        serviceMeta.serviceName = "testService";
+        registerMeta.setServiceMeta(serviceMeta);
+        Message message = new Message((byte) Header.MAGIC, Header.MAGIC, registerMeta);
+        channel.pipeline().writeAndFlush(message);
     }
 
 }

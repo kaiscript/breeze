@@ -12,7 +12,7 @@ public class RegisterMeta {
 
     public static class ServiceMeta{
 
-        private String serviceName;
+        public String serviceName;
 
     }
 
@@ -46,6 +46,15 @@ public class RegisterMeta {
 
     public RegisterMeta setAddress(Address address) {
         this.address = address;
+        return this;
+    }
+
+    public ServiceMeta getServiceMeta() {
+        return serviceMeta;
+    }
+
+    public RegisterMeta setServiceMeta(ServiceMeta serviceMeta) {
+        this.serviceMeta = serviceMeta;
         return this;
     }
 }

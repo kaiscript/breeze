@@ -28,4 +28,8 @@ public class Connector {
         return new DefaultThreadFactory(name, Thread.MAX_PRIORITY);
     }
 
+    public Bootstrap bootstrap() {
+        return bootstrap;
+    }
+
 }

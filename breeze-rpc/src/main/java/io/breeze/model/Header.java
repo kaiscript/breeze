@@ -5,9 +5,11 @@ package io.breeze.model;
  */
 public class Header {
 
+    public static final short MAGIC = (short) 0xbabe;
+
     /**
      * Message Type
-     * @see ProtocolState.TYPE
+     * @see ProtocolState
      * */
     public static final byte REQUEST                    = 0x01;     // Request
     public static final byte RESPONSE                   = 0x02;     // Response
