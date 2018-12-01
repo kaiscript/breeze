@@ -4,12 +4,12 @@ import io.breeze.model.HeaderConstant;
 import io.breeze.model.Message;
 import io.breeze.model.MessageHeader;
 import io.breeze.model.ProtocolState;
-import io.breeze.registry.RegistryService;
 import io.breeze.serialization.FSTSerializer;
 import io.breeze.serialization.SerializerFactory;
 import io.breeze.transport.connector.Acceptor;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -20,28 +20,37 @@ import java.net.SocketAddress;
 import java.util.List;
 
 /**
+ * 默认注册中心实现
  * Created by chenkai on 2018/11/15.
  */
-public class DefaultServer extends Acceptor {
+public class DefaultRegisterServer extends Acceptor {
 
     FSTSerializer fstSerializer = SerializerFactory.getFSTSerializer();
 
-    public RegistryService registryService;
-
-    public DefaultServer(RegistryService registryService) {
-        this.registryService = registryService;
+    public DefaultRegisterServer(SocketAddress localAddress) {
+        super(localAddress);
     }
 
-    public void bind(SocketAddress localAddress) {
+    public void startRegisterServer() {
+        try {
+            start();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public ChannelFuture bind() {
         ServerBootstrap serverBootstrap = bootstrap();
 
         serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
-
+                ch.pipeline().addLast(new MessageDecoder())
+                        .addLast(new MessageEncoder());
             }
         });
-
+        return serverBootstrap.bind(localAddress);
     }
 
     /**

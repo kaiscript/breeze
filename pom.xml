@@ -13,8 +13,6 @@
         <module>breeze-rpc</module>
         <module>breeze-common</module>
         <module>breeze-transport</module>
-        <module>breeze-client</module>
-        <module>breeze-server</module>
     </modules>
 
     <name>breeze</name>

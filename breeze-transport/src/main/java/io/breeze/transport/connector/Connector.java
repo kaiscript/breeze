@@ -8,7 +8,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * 维护连接实例
+ * 客户端connector维护连接实例
  * Created by kaiscript on 2018/11/14.
  */
 public class Connector {
