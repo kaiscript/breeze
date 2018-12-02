@@ -6,7 +6,7 @@ import io.breeze.model.MessageHeader;
 import io.breeze.model.ProtocolState;
 import io.breeze.serialization.FSTSerializer;
 import io.breeze.serialization.SerializerFactory;
-import io.breeze.transport.connector.Acceptor;
+import io.breeze.transport.Acceptor;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;

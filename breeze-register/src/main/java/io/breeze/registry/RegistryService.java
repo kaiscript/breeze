@@ -2,7 +2,8 @@ package io.breeze.registry;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import io.breeze.transport.connector.UnresolvedAddress;
+import io.breeze.transport.Connection;
+import io.breeze.transport.UnresolvedAddress;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.concurrent.ConcurrentMap;
@@ -12,7 +13,7 @@ import java.util.concurrent.ConcurrentMap;
  * 怎么保证client拿到是同个实例
  * Created by kaiscript on 2018/11/14.
  */
-public class RegistryService {
+public class RegistryService extends AbstractRegistryService{
 
     //连接到注册中心时为map赋值
     private final ConcurrentMap<UnresolvedAddress, Registry> clients = Maps.newConcurrentMap();
@@ -25,7 +26,8 @@ public class RegistryService {
      *
      * 从注册中心订阅，遍历clients
      */
-    public void subscribe() {
+    @Override
+    public void doSubscribe(RegisterMeta.ServiceMeta serviceMeta) {
 
     }
 
@@ -47,7 +49,8 @@ public class RegistryService {
                 registry = clients.putIfAbsent(unresolvedAddress, newRegistry);
                 if (registry == null) {
                     registry = newRegistry;
-                    registry.connect(unresolvedAddress);
+                    Connection connection = registry.connect(unresolvedAddress);
+                    registry.connectionManager().manage(connection);//保存connection
                 }
             }
 

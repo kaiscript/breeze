@@ -1,4 +1,4 @@
-package io.breeze.transport.connector;
+package io.breeze.transport;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.EventLoopGroup;
@@ -11,11 +11,16 @@ import java.util.concurrent.ThreadFactory;
  * 客户端connector维护连接实例
  * Created by kaiscript on 2018/11/14.
  */
-public class Connector {
+public class Connector implements AbstractConnector{
 
     private Bootstrap bootstrap;
     private EventLoopGroup eventLoopGroup;
     private int nThreads;
+    //每个Connector都维护一个Manager
+    private ConnectionManager connectionManager = new ConnectionManager();
+
+    public Connector() {
+    }
 
     public Connector(int nThreads) {
         this.nThreads = nThreads;
@@ -34,6 +39,11 @@ public class Connector {
 
     public Bootstrap bootstrap() {
         return bootstrap;
+    }
+
+    @Override
+    public ConnectionManager connectionManager() {
+        return connectionManager;
     }
 
 }

@@ -7,8 +7,9 @@ import io.breeze.model.MessageHeader;
 import io.breeze.model.ProtocolState;
 import io.breeze.serialization.FSTSerializer;
 import io.breeze.serialization.SerializerFactory;
-import io.breeze.transport.connector.Connector;
-import io.breeze.transport.connector.UnresolvedAddress;
+import io.breeze.transport.Connection;
+import io.breeze.transport.Connector;
+import io.breeze.transport.UnresolvedAddress;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -109,7 +110,7 @@ public class Registry extends Connector {
     }
 
     //todo 后续修改为返回 Connection
-    public void connect(UnresolvedAddress address) {
+    public Connection connect(UnresolvedAddress address) {
         logger.info("registry begin connect:{}", address);
         Bootstrap bootstrap = bootstrap();
         InetSocketAddress inetSocketAddress = InetSocketAddress.createUnresolved(address.getHost(), address.getPort());
@@ -130,6 +131,7 @@ public class Registry extends Connector {
             logger.error("bootstrap connect e:", e);
         }
 
+        return new Connection(address);
 
     }
 

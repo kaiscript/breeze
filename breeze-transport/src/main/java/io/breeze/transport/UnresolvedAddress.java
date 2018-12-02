@@ -1,4 +1,4 @@
-package io.breeze.transport.connector;
+package io.breeze.transport;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;

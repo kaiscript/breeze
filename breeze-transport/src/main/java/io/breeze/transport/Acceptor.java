@@ -1,4 +1,4 @@
-package io.breeze.transport.connector;
+package io.breeze.transport;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
