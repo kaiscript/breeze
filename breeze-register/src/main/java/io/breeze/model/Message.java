@@ -1,9 +1,14 @@
 package io.breeze.model;
 
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+
+import java.io.Serializable;
+
 /**
  * Created by chenkai on 2018/11/13.
  */
-public class Message {
+public class Message implements Serializable{
 
     /**
      * 标识Message类型，标识注册订阅
@@ -45,4 +50,8 @@ public class Message {
         return this;
     }
 
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.reflectionToString(this, ToStringStyle.SIMPLE_STYLE);
+    }
 }

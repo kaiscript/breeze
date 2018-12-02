@@ -11,11 +11,9 @@ import io.breeze.transport.connector.Connector;
 import io.breeze.transport.connector.UnresolvedAddress;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.ReplayingDecoder;
 import org.slf4j.Logger;
@@ -35,6 +33,15 @@ public class Registry extends Connector {
 
     /** connect的时候为channel赋值 */
     private Channel channel;
+
+    public Registry() {
+        this(1);
+        init();
+    }
+
+    public Registry(int nThreads) {
+        super(nThreads);
+    }
 
     /**
      * Message编码器
@@ -103,34 +110,47 @@ public class Registry extends Connector {
 
     //todo 后续修改为返回 Connection
     public void connect(UnresolvedAddress address) {
+        logger.info("registry begin connect:{}", address);
         Bootstrap bootstrap = bootstrap();
         InetSocketAddress inetSocketAddress = InetSocketAddress.createUnresolved(address.getHost(), address.getPort());
+        initChannel();
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
-                ch.pipeline().addLast(new MessageDecoder());
-                ch.pipeline().addLast(new MessageEncoder());
+                ch.pipeline().addLast("decoder", new MessageDecoder());
+                ch.pipeline().addLast("encoder", new MessageEncoder());
             }
-        });
+        }).option(ChannelOption.TCP_NODELAY, true);
 
         try {
             ChannelFuture future = bootstrap.connect(inetSocketAddress).sync();
             channel = future.channel();
+            testClientSend();
         } catch (Exception e) {
             logger.error("bootstrap connect e:", e);
         }
 
-        testClientSend();
 
     }
 
-    public void testClientSend() {
+    private void initChannel() {
+        bootstrap().channel(NioSocketChannel.class);
+    }
+
+    public void testClientSend() throws Exception{
         RegisterMeta registerMeta = new RegisterMeta();
         RegisterMeta.ServiceMeta serviceMeta = new RegisterMeta.ServiceMeta();
         serviceMeta.serviceName = "testService";
         registerMeta.setServiceMeta(serviceMeta);
         Message message = new Message((byte) HeaderConstant.MAGIC, HeaderConstant.MAGIC, registerMeta);
-        channel.pipeline().writeAndFlush(message);
+//        channel.pipeline().writeAndFlush(message);
+        channel.writeAndFlush(message);
+        try {
+            channel.closeFuture().sync();
+        } catch (Exception e) {
+            logger.error("testClientSend e", e);
+        }
+        logger.info("testClientSend message:{}", message);
     }
 
 }

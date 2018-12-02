@@ -9,14 +9,15 @@ import io.breeze.serialization.SerializerFactory;
 import io.breeze.transport.connector.Acceptor;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.*;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.ReplayingDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 import java.util.List;
 
 /**
@@ -25,32 +26,52 @@ import java.util.List;
  */
 public class DefaultRegisterServer extends Acceptor {
 
+    private static final Logger logger = LoggerFactory.getLogger(DefaultRegisterServer.class);
+
     FSTSerializer fstSerializer = SerializerFactory.getFSTSerializer();
 
-    public DefaultRegisterServer(SocketAddress localAddress) {
-        super(localAddress);
+    private MessageHandler messageHandler = new MessageHandler();
+
+    public DefaultRegisterServer(int port) {
+        this.localAddress = new InetSocketAddress(port);
+    }
+
+    public static DefaultRegisterServer createRegisterServer(int port) {
+        DefaultRegisterServer server = new DefaultRegisterServer(port);
+        server.init();
+        return server;
     }
 
     public void startRegisterServer() {
         try {
             start();
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     @Override
     public ChannelFuture bind() {
+        logger.info("DefaultRegisterServer bind at :{}", localAddress);
         ServerBootstrap serverBootstrap = bootstrap();
 
+        initChannel();
         serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
-                ch.pipeline().addLast(new MessageDecoder())
-                        .addLast(new MessageEncoder());
+                ch.pipeline().addLast("decoder",new MessageDecoder())
+                        .addLast("encoder",new MessageEncoder())
+                        .addLast(messageHandler);
             }
-        });
+        }).option(ChannelOption.SO_BACKLOG, 128)
+        .childOption(ChannelOption.SO_KEEPALIVE, true);
         return serverBootstrap.bind(localAddress);
+    }
+
+    //set channel or channelFactory
+    public void initChannel() {
+        //or channelFactory
+        bootstrap().channel(NioServerSocketChannel.class);
     }
 
     /**
@@ -117,6 +138,13 @@ public class DefaultRegisterServer extends Acceptor {
 
     }
 
-
+    @ChannelHandler.Sharable
+    class MessageHandler extends ChannelInboundHandlerAdapter{
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            logger.info("defaultRegisterServer receive:{}", msg);
+            super.channelRead(ctx, msg);
+        }
+    }
 
 }

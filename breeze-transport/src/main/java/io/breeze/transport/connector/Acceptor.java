@@ -17,14 +17,10 @@ public abstract class Acceptor {
     private EventLoopGroup bossGroup;
     private EventLoopGroup worker;
 
-    private int nBosses;
-    private int nWorker;
+    int nBosses = 1;
+    int nWorker = 16;
 
     protected SocketAddress localAddress;
-
-    public Acceptor(SocketAddress localAddress) {
-        this.localAddress = localAddress;
-    }
 
     public void init() {
         serverBootstrap = new ServerBootstrap();
@@ -35,8 +31,14 @@ public abstract class Acceptor {
 
     public abstract ChannelFuture bind();
 
-    public void start() throws InterruptedException {
-        ChannelFuture channelFuture = bind().sync();
+    protected void start(){
+        try {
+            ChannelFuture channelFuture = bind().sync();
+            //wait until the server is closed
+            channelFuture.channel().closeFuture().sync();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public ServerBootstrap bootstrap() {

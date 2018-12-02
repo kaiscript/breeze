@@ -1,6 +1,5 @@
 package io.breeze.client;
 
-import io.breeze.registry.RegisterMeta;
 import io.breeze.registry.RegistryService;
 
 /**
@@ -18,8 +17,8 @@ public class DefaultClient {
 
     }
 
-    void connectToRegisterCenter(RegisterMeta meta) {
-
+    public void connectToRegisterCenter(String connectString) {
+        registryService.connectToRegisterCenter(connectString);
     }
 
 }

@@ -17,6 +17,10 @@ public class Connector {
     private EventLoopGroup eventLoopGroup;
     private int nThreads;
 
+    public Connector(int nThreads) {
+        this.nThreads = nThreads;
+    }
+
     public void init() {
         ThreadFactory threadFactory = workerThreadFactory("io.breeze.connector");
         eventLoopGroup = new NioEventLoopGroup(nThreads, threadFactory);
